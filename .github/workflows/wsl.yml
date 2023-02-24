@@ -10,7 +10,7 @@ env:
   FFMPEG_PATH: FFmpeg/ffmpeg
 
 jobs:
-  linux:
+  WSL:
     name: ${{ matrix.os }}.${{ matrix.compiler.compiler }}
     strategy:
       fail-fast: false
@@ -19,14 +19,13 @@ jobs:
           - { compiler: GNU, CC: gcc }
           - { compiler: LLVM, CC: clang }
 
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: Vampire/setup-wsl@v2
         with:
           wsl-conf: |
             [automount]
             root = /
-          wsl-shell-user: test
           set-as-default: "true"
           distribution: Ubuntu-20.04
           update: "true"
