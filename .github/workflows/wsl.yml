@@ -20,6 +20,9 @@ jobs:
           - { compiler: LLVM, CC: clang }
 
     runs-on: windows-2019
+    defaults:
+      run:
+        shell: wsl-bash {0}
     steps:
       - uses: Vampire/setup-wsl@v2
         with:
