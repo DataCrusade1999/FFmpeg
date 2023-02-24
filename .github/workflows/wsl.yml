@@ -1,0 +1,73 @@
+name: WSL CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FFMPEG_PATH: FFmpeg/ffmpeg
+
+jobs:
+  linux:
+    name: ${{ matrix.os }}.${{ matrix.compiler.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - { compiler: GNU, CC: gcc }
+          - { compiler: LLVM, CC: clang }
+
+    runs-on: windows-latest
+    steps:
+      - uses: Vampire/setup-wsl@v2
+        with:
+          wsl-conf: |
+            [automount]
+            root = /
+          wsl-shell-user: test
+          set-as-default: "true"
+          distribution: Ubuntu-20.04
+          update: "true"
+          additional-packages: autoconf
+            automake
+            build-essential
+            cmake
+            git-core
+            libass-dev
+            libfreetype6-dev
+            libgnutls28-dev
+            libmp3lame-dev
+            libsdl2-dev
+            libtool
+            libva-dev
+            libvdpau-dev
+            libvorbis-dev
+            libxcb1-dev
+            libxcb-shm0-dev
+            libxcb-xfixes0-dev
+            meson
+            ninja-build
+            pkg-config
+            texinfo
+            wget
+            yasm
+            zlib1g-dev
+            libunistring-dev
+            libaom-dev
+
+      - name: Configure
+        run: ./configure --cc=${{ matrix.compiler.CC }} --disable-asm --enable-ffmpeg --disable-everything --enable-decoder=vvc --enable-parser=vvc --enable-demuxer=vvc --enable-protocol=file,pipe --enable-encoder=rawvideo --enable-muxer=rawvideo,md5
+
+      - name: Build
+        run: make -j
+
+      - name: Download Bitstream
+        run: cd .. && git clone https://github.com/ffvvc/tests.git tests
+
+      - name: Unit test
+        run: cd .. && python3 tests/tools/ffmpeg.py tests/conformance/passed
+
+      - name: Negtive test
+        run: cd .. && python3 tests/tools/ffmpeg.py tests/conformance/failed || true
