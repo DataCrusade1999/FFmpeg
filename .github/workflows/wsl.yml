@@ -60,7 +60,7 @@ jobs:
             libaom-dev
 
       - name: Git Clone
-        run: cd FFmpeg
+        run: git clone https://github.com/ffvvc/FFmpeg.git && cd FFmpeg
 
       - name: Configure
         run: ./configure --cc=${{ matrix.compiler.CC }} --disable-asm --enable-ffmpeg --disable-everything --enable-decoder=vvc --enable-parser=vvc --enable-demuxer=vvc --enable-protocol=file,pipe --enable-encoder=rawvideo --enable-muxer=rawvideo,md5
