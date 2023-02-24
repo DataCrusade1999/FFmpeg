@@ -19,7 +19,7 @@ jobs:
           - { compiler: GNU, CC: gcc }
           - { compiler: LLVM, CC: clang }
 
-    runs-on: windows-2022
+    runs-on: windows-2019
     defaults:
       run:
         shell: wsl-bash {0}
@@ -58,7 +58,7 @@ jobs:
             zlib1g-dev
             libunistring-dev
             libaom-dev
-
+      - uses: actions/checkout@v2
       - name: Configure
         run: ./configure --cc=${{ matrix.compiler.CC }} --disable-asm --enable-ffmpeg --disable-everything --enable-decoder=vvc --enable-parser=vvc --enable-demuxer=vvc --enable-protocol=file,pipe --enable-encoder=rawvideo --enable-muxer=rawvideo,md5
 
