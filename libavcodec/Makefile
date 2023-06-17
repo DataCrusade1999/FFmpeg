@@ -62,6 +62,7 @@ OBJS = ac3_parser.o                                                     \
        xiph.o                                                           \
 
 # subsystems
+include $(SRC_PATH)/libavcodec/vvc/Makefile
 OBJS-$(CONFIG_AANDCTTABLES)            += aandcttab.o
 OBJS-$(CONFIG_AC3DSP)                  += ac3dsp.o ac3.o ac3tab.o
 OBJS-$(CONFIG_ADTS_HEADER)             += adts_header.o mpeg4audio_sample_rates.o
@@ -425,10 +426,6 @@ OBJS-$(CONFIG_HEVC_DECODER)            += hevcdec.o hevc_mvs.o \
                                           hevc_cabac.o hevc_refs.o hevcpred.o    \
                                           hevcdsp.o hevc_filter.o hevc_data.o \
                                           h274.o
-OBJS-$(CONFIG_VVC_DECODER)             += vvcdec.o vvc_ps.o vvc_thread.o vvc_cabac.o \
-                                          vvc_ctu.o vvcdsp.o vvc_itx_1d.o vvcpred.o \
-                                          vvc_inter.o vvc_mvs.o vvc_refs.o vvc_filter.o\
-                                          executor.o vvc_data.o
 OBJS-$(CONFIG_HEVC_AMF_ENCODER)        += amfenc_hevc.o
 OBJS-$(CONFIG_HEVC_CUVID_DECODER)      += cuviddec.o
 OBJS-$(CONFIG_HEVC_MEDIACODEC_DECODER) += mediacodecdec.o

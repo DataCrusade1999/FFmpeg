@@ -1,6 +1,4 @@
 /*
- * VVC video Decoder
- *
  * Copyright (C) 2022 Nuo Mi
  *
  * This file is part of FFmpeg.
@@ -24,30 +22,52 @@
 #define AVCODEC_EXECUTOR_H
 
 typedef struct Executor Executor;
-typedef struct Task Task;
+typedef struct Tasklet Tasklet;
 
-struct Task {
-    Task *next;
+struct Tasklet {
+    Tasklet *next;
 };
 
 typedef struct TaskCallbacks {
     void *user_data;
 
-    size_t local_context_size;
+    int local_context_size;
 
     // return 1 if a's priority > b's priority
-    int (*priority_higher)(const Task *a, const Task *b);
+    int (*priority_higher)(const Tasklet *a, const Tasklet *b);
 
     // task is ready for run
-    int (*ready)(const Task *t, void *user_data);
+    int (*ready)(const Tasklet *t, void *user_data);
 
     // run the task
-    int (*run)(Task *t, void *local_context, void *user_data);
+    int (*run)(Tasklet *t, void *local_context, void *user_data);
 } TaskCallbacks;
 
+/**
+ * Alloc executor
+ * @param callbacks callback strucutre for executor
+ * @param thread_count worker thread number
+ * @return return the executor
+ */
 Executor* ff_executor_alloc(const TaskCallbacks *callbacks, int thread_count);
+
+/**
+ * Free executor
+ * @param e  pointer to executor
+ */
 void ff_executor_free(Executor **e);
-void ff_executor_execute(Executor *e, Task *t);
+
+/**
+ * Add task to executor
+ * @param e pointer to executor
+ * @param t pointer to task
+ */
+void ff_executor_execute(Executor *e, Tasklet *t);
+
+/**
+ * Wakeup all threads
+ * @param e pointer to executor
+ */
 void ff_executor_wakeup(Executor *e);
 
-#endif
+#endif //AVCODEC_EXECUTOR_H

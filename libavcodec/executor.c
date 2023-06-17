@@ -21,10 +21,10 @@
  */
 #include "libavutil/avutil.h"
 #include "libavutil/thread.h"
+
 #include "executor.h"
 
 typedef struct ThreadInfo {
-    int idx;
     Executor *e;
     pthread_t thread;
 } ThreadInfo;
@@ -38,16 +38,16 @@ struct Executor {
     pthread_mutex_t lock;
     pthread_cond_t cond;
     int die;
-    Task *tasks;
+    Tasklet *tasks;
 };
 
-static void remove_task(Task **prev, Task *t)
+static void remove_task(Tasklet **prev, Tasklet *t)
 {
     *prev  = t->next;
     t->next = NULL;
 }
 
-static void add_task(Task **prev, Task *t)
+static void add_task(Tasklet **prev, Tasklet *t)
 {
     t->next = *prev;
     *prev   = t;
@@ -57,13 +57,13 @@ static void *executor_worker_task(void *data)
 {
     ThreadInfo *ti = (ThreadInfo*)data;
     Executor *e = ti->e;
-    void *lc       = e->local_contexts + ti->idx * e->cb.local_context_size;
-    Task **prev;
+    void *lc       = e->local_contexts + (ti - e->threads) * e->cb.local_context_size;
+    Tasklet **prev;
     TaskCallbacks *cb = &e->cb;
 
     pthread_mutex_lock(&e->lock);
     while (1) {
-        Task* t = NULL;
+        Tasklet* t = NULL;
         if (e->die) break;
 
         for (prev = &e->tasks; *prev; prev = &(*prev)->next) {
@@ -98,19 +98,13 @@ Executor* ff_executor_alloc(const TaskCallbacks *cb, int thread_count)
         return NULL;
     e->cb = *cb;
 
-    e->local_contexts = av_malloc(thread_count * e->cb.local_context_size);
+    e->local_contexts = av_calloc(thread_count, e->cb.local_context_size);
     if (!e->local_contexts)
         goto free_executor;
 
     e->threads = av_calloc(thread_count, sizeof(*e->threads));
     if (!e->threads)
         goto free_contexts;
-    for (i = 0; i < thread_count; i++) {
-        ThreadInfo *ti = e->threads + i;
-        ti->e = e;
-        ti->idx = i;
-    }
-
     ret = pthread_mutex_init(&e->lock, NULL);
     if (ret)
         goto free_threads;
@@ -121,6 +115,7 @@ Executor* ff_executor_alloc(const TaskCallbacks *cb, int thread_count)
 
     for (i = 0; i < thread_count; i++) {
         ThreadInfo *ti = e->threads + i;
+        ti->e = e;
         ret = pthread_create(&ti->thread, NULL, executor_worker_task, ti);
         if (ret)
             goto join_threads;
@@ -171,10 +166,10 @@ void ff_executor_free(Executor **executor)
     av_freep(executor);
 }
 
-void ff_executor_execute(Executor *e, Task *t)
+void ff_executor_execute(Executor *e, Tasklet *t)
 {
     TaskCallbacks *cb = &e->cb;
-    Task **prev;
+    Tasklet **prev;
 
     pthread_mutex_lock(&e->lock);
     for (prev = &e->tasks; *prev && cb->priority_higher(*prev, t); prev = &(*prev)->next)
